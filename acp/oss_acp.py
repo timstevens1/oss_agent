@@ -14,8 +14,8 @@ callbacks that the protocol requires.
 import asyncio
 import sys
 from pathlib import Path
-from workspace.tools.tools import Tools
-from utils import execute_zsh_commands
+from ..tools.tools import Tools
+from ..utils import run_zsh_command
 from uuid import uuid4
 
 import logging
@@ -131,7 +131,7 @@ class BridgeAgent(Agent):
 
         # ----- 1️⃣  Pull out plain‑text from the blocks -----------------
         if self._oss is None:
-            tools = Tools(tools=[execute_zsh_commands], filename="/Users/timstevens/projects/qwen_agent/servers.json")
+            tools = Tools(tools=[run_zsh_command], filename="/Users/timstevens/projects/qwen_agent/servers.json")
 
             await tools.init_mcp_connections()
             # Initialise your own agent once – this will be reused for every turn.

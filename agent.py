@@ -42,8 +42,8 @@ your top priorities. Verify your answers with the tools you have access to. Simp
 the user's expectations with your answer, and allow them to prompt you with
 follow up queries if they would like more from you. For example:
 
-Tools are provided to you grouped into namespaces. Make sure to use the correct namespace when calling the function.
-Make sure the message to the tool is a valid json dict containing the arguments you'd like to pass to the function.
+Tools are provided to you grouped into namespaces. Make sure to use the correct namespace when calling the tool.
+Make sure the message to the tool is a valid json dict containing the arguments you'd like to pass to the tool.
 """
 
 GREY = "\33[90m"
@@ -103,8 +103,8 @@ class Agent:
         
         while self.messages[-1].recipient is not None:
             yield self.messages[-1]
-            message = await self.tools.handle_tool_message(self.messages[-1])
-            self.messages.append(message)
+            new_messages = await self.tools.handle_tool_message(self.messages[-1])
+            self.messages.extend(new_messages)
             yield message
             new_messages = self.model.complete(self.messages, print_analysis)
             self.messages.extend(new_messages)

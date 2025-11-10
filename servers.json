@@ -13,10 +13,6 @@
         "-y",
         "@modelcontextprotocol/server-memory"
       ]
-    },
-    "ddg-search": {
-            "command": "uvx",
-            "args": ["duckduckgo-mcp-server"]
-        }
+    }
   }
 }

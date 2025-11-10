@@ -10,6 +10,8 @@ from openai_harmony import (
     Author
 )
 
+from importlib.resources import read_text
+
 from .mcp_client import MCPClient, clients_from_json
 
 import types
@@ -20,6 +22,14 @@ import re
 import inspect
 from typing import Union
 from pathlib import Path
+
+
+from .apply_patch.apply_patch import apply_patch as apply_patch_tool
+from .simple_browser.backend import DuckBackend
+from .simple_browser.simple_browser_tool import SimpleBrowserTool
+
+from .python_docker.docker_tool import PythonTool
+
 
 
 
@@ -40,7 +50,10 @@ class Tools:
     def  __init__(self, 
                   tools: list[types.FunctionType] = None,
                   servers: list[MCPClient] = None,
-                  filename: Union[Path, str] = None):
+                  filename: Union[Path, str] = None,
+                  python_tool = True,
+                  browser_tool = True,
+                  apply_patch = True):
         
         self.namespaces = []
        
@@ -48,6 +61,32 @@ class Tools:
         if tools is not None:
             self.tool_dict = { f.__name__: f for f in tools}
             descriptions = [Tools.tool_from_func(f) for f in tools]
+
+            if python_tool:
+                self.python_tool = PythonTool(execution_backend="dangerously_use_local_jupyter")
+            else:
+                self.python_tool = None
+
+            if browser_tool:
+                self.browser_tool = SimpleBrowserTool(DuckBackend(source=""))
+            else:
+                self.browser_tool = None
+
+            if apply_patch:
+                current_file_path = Path(__file__).resolve().parent / 'apply_patch' / 'apply_patch.md'
+                with open(current_file_path, 'r') as file:
+                    instructions = file.read()
+                name = 'apply_patch'
+                
+                parameters= {
+                        "type": "object",
+                        "properties": {'text': {'type': 'str'}},
+                        "required": ['text'], 
+                }
+                self.tool_dict[name] = apply_patch_tool
+                descriptions.append(ToolDescription.new(name=name, description=instructions, parameters=parameters))
+                
+
             self.namespaces.append(ToolNamespaceConfig(name="functions", description=None, tools=descriptions))
 
 
@@ -64,7 +103,9 @@ class Tools:
 
     
     async def init_mcp_connections(self):
-        for s in self.server_dict.values():
+        for k, s in self.server_dict.items():
+            if k == 'browser' or k == 'python':
+                continue
             await s.connect()
             self.namespaces.append(s.get_namespace())
 
@@ -118,6 +159,8 @@ class Tools:
             result = await asyncio.to_thread(tool, **args)
 
         return result
+
+        
    
     async def handle_tool_message(self, msg: Message):
         print("\n message: " + str(msg))
@@ -126,18 +169,29 @@ class Tools:
             content = msg.content[0].text
             args = json.loads(content)
 
-            if namespace != 'functions':
-                result = await self.call_mcp_tool(namespace, name, args)
-            else:
+            if namespace == 'functions':
                 result = await self.call_function_tool(name, args)
+            elif namespace == 'browser':
+                result = []
+                async for m in self.browser_tool.process(msg):
+                    result.append(m)
+                return result
+            elif namespace == 'python':
+                result = []
+                async for m in self.browser_tool.process(msg):
+                    result.append(m)
+                return result
+            else:
+                result = await self.call_mcp_tool(namespace, name, args)
+                
 
-            return	Message.from_author_and_content(
+            return	[Message.from_author_and_content(
                     Author.new(Role.TOOL, '.'.join([namespace, name])),
                 str(result)
-                ).with_channel("commentary")
+                ).with_channel("commentary")]
         except Exception as e:
             print(f'\n ERROR: {e}')
-            return Message.from_author_and_content(Author.new(Role.TOOL,name=msg.recipient), content=str(e))
+            return [Message.from_author_and_content(Author.new(Role.TOOL,name=msg.recipient), content=str(e))]
     
 
 
