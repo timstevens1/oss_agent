@@ -24,11 +24,11 @@ from typing import Union
 from pathlib import Path
 
 
-from .apply_patch.apply_patch import apply_patch as apply_patch_tool
-from .simple_browser.backend import DuckBackend
-from .simple_browser.simple_browser_tool import SimpleBrowserTool
+from gpt_oss.tools.apply_patch import apply_patch as apply_patch_tool
+from .duck_backend import DuckBackend
+from gpt_oss.tools.simple_browser.simple_browser_tool import SimpleBrowserTool
 
-from .python_docker.docker_tool import PythonTool
+from gpt_oss.tools.python_docker.docker_tool import PythonTool
 
 
 
@@ -41,6 +41,8 @@ def clean_func_name(recp):
     func_str = re.sub('<[^>]+>', ' ', recp).split(' ')[0]
     print(func_str)
     func_list = func_str.split('.')
+    if len(func_list) == 1:
+        return func_list[0], func_list[0]
     namespace = func_list[0]
     name = func_list[1]
     return namespace, name
@@ -178,7 +180,7 @@ class Tools:
                 return result
             elif namespace == 'python':
                 result = []
-                async for m in self.browser_tool.process(msg):
+                async for m in self.python_tool.process(msg):
                     result.append(m)
                 return result
             else:
@@ -189,9 +191,9 @@ class Tools:
                     Author.new(Role.TOOL, '.'.join([namespace, name])),
                 str(result)
                 ).with_channel("commentary")]
-        except Exception as e:
+        except FileNotFoundError as e:
             print(f'\n ERROR: {e}')
-            return [Message.from_author_and_content(Author.new(Role.TOOL,name=msg.recipient), content=str(e))]
+            return [Message.from_author_and_content(Author.new(Role.TOOL,name=msg.recipient), content=str(e)).with_channel("comentary")]
     
 
 

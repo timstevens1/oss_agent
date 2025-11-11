@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: oss_agent
+Version: 0.1.0
+Summary: gpt_oss_20b powered agent designed to run on apple silicon
+License: Apache-2.0
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10,<3.15
+License-File: LICENSE
+Dynamic: classifier
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-python
+Dynamic: summary

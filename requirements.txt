@@ -1,0 +1,5 @@
+openai-harmony
+mlx-lm
+transformers
+torch
+pytest

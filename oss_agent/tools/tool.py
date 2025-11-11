@@ -94,7 +94,10 @@ class Tool(ABC):
         return Message(
             id=id if id else uuid4(),
             author=Author(role=Role.TOOL, name=self.name),
-            content=TextContent(text=error_message), # TODO: Use SystemError instead
+            # NOTE: Error messages are currently represented using TextContent.
+            # If a dedicated SystemError content type is added in the future, this line
+            # should be updated accordingly.
+            content=TextContent(text=error_message),
             channel=channel,
         ).with_recipient("assistant")
 
