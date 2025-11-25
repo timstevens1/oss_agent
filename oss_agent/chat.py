@@ -12,7 +12,7 @@ import readline
 import asyncio
 
 from .agent import Agent
-from .model import RemoteOssModel
+from .model import OpenAICompatibleModel
 from .tools.tools import Tools
 from .utils import run_zsh_command
 from rich.console import Console
@@ -26,7 +26,7 @@ RESET = "\33[0m"
 # backward compatibility but it is not used elsewhere in the module.
 root = "/Users/timstevens/projects/qwen_agent/workspace"
 
-developer_prompt = """you're a general purpose assistant. You have filesystem access, \nand internet search access. Your job is to answer user questions in an informed way and to\nhandle their requests such as for coding or summarization or text generation. Accuracy and brevity are\nyour top priorities. Verify your answers with the tools you have access to. Simply try to meet \nthe user's expectations with your answer, and allow them to prompt you with\nfollow up queries if they would like more from you.\n\nTools are provided to you grouped into namespaces. Make sure to use the correct namespace when calling the tool.\nMake sure the message to the tool is a valid json dict containing the arguments you'd like to pass to the tool.\n"""
+developer_prompt = """you're a general purpose assistant. You have filesystem access, \nand internet search access. Your job is to answer user questions in an informed way and to\nhandle their requests such as for coding or summarization or text generation. Accuracy and brevity are\nyour top priorities. Verify your answers with the tools you have access to. Simply try to meet \nthe user's expectations with your answer, and allow them to prompt you with\nfollow up queries if they would like more from you.\n\nMake sure the message to the tool is a valid json dict containing the arguments you'd like to pass to the tool.\n"""
 
 prompt = "User:"
 GREEN = "\033[32m"
@@ -52,9 +52,12 @@ async def main(_: None = None):
     else:
         readline.write_history_file(hist_file)
 
-    tools = Tools(tools=[run_zsh_command], filename=f"{os.path.expanduser('~')}/.config/oss_agent/servers.json")
+    tools = Tools(tools=[run_zsh_command], 
+                  filename=f"{os.path.expanduser('~')}/.config/oss_agent/servers.json",
+                  python_tool=False,
+                  browser_tool=False)
     await tools.init_mcp_connections()
-    model = RemoteOssModel("ws://localhost:8999") 
+    model = OpenAICompatibleModel('http://localhost:8999')
     agent = Agent(model, tools=tools, developer_message=developer_prompt)
     while True:
         try:

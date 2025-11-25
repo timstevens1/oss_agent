@@ -1,15 +1,6 @@
 
 import asyncio
 
-
-from openai_harmony import (
-    Message,
-    Role,
-    ToolNamespaceConfig,
-    ToolDescription,
-    Author
-)
-
 from typing import Optional, Any, Union
 from pathlib import Path
 from contextlib import AsyncExitStack
@@ -17,6 +8,8 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.types import ListToolsResult
+
+from .tool import Tool
 
 from mcp.client.stdio import stdio_client
 import json
@@ -122,27 +115,17 @@ class MCPClient:
         response = await self.session.call_tool(tool_name, tool_args)
         return response
     
-    
-    def get_namespace(self):
-
-        tool_from_mcp = ToolNamespaceConfig(
-            name=self.name,
-            description=self.init_response.instructions,
-            tools=self.get_harmony_tools())
-        return tool_from_mcp
 
     def get_tools(self):
-        return [t.inputSchema for t in self.tools.tools]
-    
-    def get_harmony_tools(self):
-        list_tools_response = self.post_process_tools_description(self.tools)
-        tools=[
-                ToolDescription.new(name=tool.name,
-                                    description=tool.description,
-                                    parameters=tool.inputSchema)
-                for tool in list_tools_response.tools
-            ]
+        tools = {}
+        for t in self.tools.tools:
+            async def tool_caller(**args):
+                response = await self.session.call_tool(t.name, args)
+                return response
+            tools[t.name] = Tool(tool_caller, t.name, t.description, t.inputSchema)
+
         return tools
+        
 
 
 class StdIOClient(MCPClient):

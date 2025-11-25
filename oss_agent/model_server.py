@@ -127,7 +127,7 @@ def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
+        default=8999,
         help="Port to bind the WebSocket server",
     )
     parser.add_argument(
